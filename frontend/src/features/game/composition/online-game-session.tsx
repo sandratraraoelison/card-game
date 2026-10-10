@@ -36,6 +36,9 @@ function OnlineScreen({ service }: { service: LobbyService }) {
     <div className={`${styles.toolbar} ${room?.game && room.game.phase !== 'finished' ? styles.toolbarInGame : ''}`}>
       <Link href="/">← Simulation locale</Link>
       <strong>Jeu en ligne</strong>
+      {room && room.hostId === session?.player.id && <button className="button secondary" disabled={busy || !connected} onClick={() => {
+        if (window.confirm('Terminer le salon pour tous les joueurs ? La manche en cours sera annulée et ses mises remboursées. Les primes encore reportées seront réparties entre les joueurs du salon. Cette fermeture est définitive.')) void lobby.close();
+      }}>Terminer le salon</button>}
       {session && room?.game?.phase !== 'finished' && <span>Solde fictif : {formatAriary(room?.members.find(member => member.id === session.player.id)?.balance ?? lobby.balance ?? session.player.balance ?? 0)}</span>}
       {room && <span>Mise : {formatAriary(room.stake ?? 0)} · Pot : {formatAriary(room.pot ?? 0)}</span>}
       {room && <span>10 cartes : {formatAriary(room.exposurePrize ?? 0)} · Victoire à 13 : {formatAriary(room.finishPrize ?? 0)}</span>}

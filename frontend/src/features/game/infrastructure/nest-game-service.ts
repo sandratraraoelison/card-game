@@ -1,5 +1,5 @@
 import type { CommandEnvelope, GameService, GameView, RoomView } from '@rami/game';
-import { NetworkError, type LobbyService } from '@rami/game';
+import { createIdentifier, NetworkError, type LobbyService } from '@rami/game';
 
 /** HTTP adapter; only the server changes the game. Polling belongs to the lobby lifecycle. */
 export class NestGameService implements GameService {
@@ -17,13 +17,19 @@ export class NestGameService implements GameService {
   }
   dispatch = async (command: CommandEnvelope) => {
     if (this.disposed) return { ok: false as const, error: 'Cette session est fermée.' };
+    let currentCommand = command;
     // A lost acknowledgement is retried with the SAME ID; the server deduplicates it.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const response = await this.lobby.command(this.roomId, command);
+        const response = await this.lobby.command(this.roomId, currentCommand);
         if (!this.disposed) {
           if (response.room.game) this.receive(response.room.game);
           this.onRoom(response.room);
+        }
+        if (!this.disposed && attempt === 0 && !response.result.ok && response.result.error === 'La partie a changé. Réessayez avec son état actuel.' && response.room.game?.id === command.gameId) {
+          // A rejected stale command did not apply. Retry against the received state.
+          currentCommand = { ...command, expectedRevision: this.snapshot.revision, commandId: createIdentifier() };
+          continue;
         }
         return response.result;
       } catch (error) {

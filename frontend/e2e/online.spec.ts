@@ -10,6 +10,15 @@ for (const count of [4, 5]) {
     })));
     try {
       const pages = await Promise.all(contexts.map(context => context.newPage()));
+      const offlineContexts = new Set<number>();
+      if (process.env.ONLINE_TEST_API_URL) {
+        await Promise.all(pages.map((page, index) => page.route('**/api/**', async route => {
+          if (offlineContexts.has(index)) { await route.abort('internetdisconnected'); return; }
+          const url = new URL(route.request().url());
+          const response = await route.fetch({ url: `${process.env.ONLINE_TEST_API_URL}${url.pathname}${url.search}` });
+          await route.fulfill({ response });
+        })));
+      }
       // LAN HTTP does not expose randomUUID, even though getRandomValues works.
       await Promise.all(contexts.map(context => context.addInitScript(() => {
         Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true });
@@ -53,6 +62,13 @@ for (const count of [4, 5]) {
         await expect(page.getByRole('button', { name: 'Nouvelle manche', exact: false })).toBeDisabled();
       }
       await expect(pages[1].getByRole('button', { name: 'Piocher une carte', exact: true })).toBeDisabled();
+      const waitingHand = pages[1].locator('.hand-cards [data-card-id]');
+      const beforeArrange = await waitingHand.evaluateAll(cards => cards.map(card => card.getAttribute('data-card-id')));
+      await waitingHand.first().click();
+      await expect(pages[1].getByRole('button', { name: 'Déplacer la carte à droite' })).toBeEnabled();
+      await pages[1].getByRole('button', { name: 'Déplacer la carte à droite' }).click();
+      await expect(waitingHand.nth(1)).toHaveAttribute('data-card-id', beforeArrange[0]!);
+      await expect(pages[1].getByRole('button', { name: 'Piocher une carte', exact: true })).toBeDisabled();
       await host.getByRole('button', { name: 'Piocher une carte', exact: true }).click();
       await expect(host.locator('.hand-cards .playing-card')).toHaveCount(14);
       await host.locator('.hand-cards .playing-card').first().click();
@@ -66,9 +82,11 @@ for (const count of [4, 5]) {
       await next.reload();
       await expect(next.locator('.hand-cards .playing-card')).toHaveCount(14);
       expect(await next.locator('.hand-cards [data-card-id]').evaluateAll(cards => cards.map(c => c.getAttribute('data-card-id')))).toEqual(before);
+      offlineContexts.add(count - 1);
       await contexts[count - 1].setOffline(true);
       await expect(next.getByText('Reconnexion en cours…', { exact: true })).toBeVisible({ timeout: 15000 });
       await contexts[count - 1].setOffline(false);
+      offlineContexts.delete(count - 1);
       await expect(next.getByText('Connecté au serveur', { exact: true })).toBeVisible({ timeout: 15000 });
       await expect(next.locator('.hand-cards .playing-card')).toHaveCount(14);
       expect(await next.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);

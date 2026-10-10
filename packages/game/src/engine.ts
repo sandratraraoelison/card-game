@@ -174,11 +174,13 @@ export function applyCommand(
   )
     return fail("La partie a changé. Réessayez avec son état actuel.");
   const player = state.players[state.currentPlayerIndex];
-  if (envelope.playerId !== player.id) return fail("Attendez votre tour.");
+  const actorIndex = state.players.findIndex(p => p.id === envelope.playerId);
+  if (actorIndex < 0) return fail('Joueur inconnu.');
+  if (envelope.command.type !== 'reorder' && envelope.playerId !== player.id) return fail("Attendez votre tour.");
   if (state.phase === "finished")
     return fail("Cette manche est terminée. Lancez une nouvelle manche.");
   const next = structuredClone(state),
-    p = next.players[next.currentPlayerIndex],
+    p = next.players[actorIndex],
     command = envelope.command;
   const log = (message: string) => {
     next.log = [message, ...next.log].slice(0, 30);

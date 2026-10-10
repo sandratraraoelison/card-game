@@ -23,6 +23,7 @@ export interface LobbyService {
   create(name: string, capacity: 4 | 5, stake?: number): Promise<RoomView>;
   join(id: string): Promise<RoomView>;
   leave(id: string): Promise<void>;
+  close(id: string): Promise<void>;
   start(id: string): Promise<RoomView>;
   ready(id: string, gameId: string): Promise<RoomView>;
   command(id: string, command: CommandEnvelope): Promise<{ result: CommandResult; room: RoomView }>;

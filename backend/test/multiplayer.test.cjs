@@ -28,6 +28,30 @@ async function guests(request, count) {
   }));
 }
 const move = (room, guest, command, revision = room.game.revision) => ({ gameId: room.game.id, playerId: guest.player.id, expectedRevision: revision, commandId: randomUUID(), command });
+
+test('only the host closes a room and unspent credits are refunded once', async () => {
+  const { app, request } = await server();
+  try {
+    const players = await guests(request, 4);
+    const owner = players[0];
+    for (const active of [false, true]) {
+      const room = (await request('/rooms', owner.token, 'POST', { name: 'Fermeture', capacity: 4, stake: 1000 })).body;
+      for (const player of players.slice(1)) await request(`/rooms/${room.id}/join`, player.token, 'POST');
+      if (active) await request(`/rooms/${room.id}/game/start`, owner.token, 'POST');
+      assert.equal((await request(`/rooms/${room.id}`, players[1].token, 'DELETE')).status, 403);
+      assert.equal((await request(`/rooms/${room.id}`, owner.token, 'DELETE')).status, 204);
+      assert.equal((await request(`/rooms/${room.id}`, owner.token, 'DELETE')).status, 404);
+      assert.equal((await request(`/rooms/${room.id}`, players[1].token)).status, 404);
+      for (const player of players) assert.equal((await request('/sessions/me', player.token)).body.balance, 10000);
+    }
+    const room = (await request('/rooms', owner.token, 'POST', { name: 'Reports', capacity: 4, stake: 0 })).body;
+    for (const player of players.slice(1)) await request(`/rooms/${room.id}/join`, player.token, 'POST');
+    app.get(SqliteRooms).transact(room.id, stored => { stored.carryover = 1001; stored.finishCarryover = 1500; });
+    await request(`/rooms/${room.id}`, owner.token, 'DELETE');
+    const balances = await Promise.all(players.map(async player => (await request('/sessions/me', player.token)).body.balance));
+    assert.equal(balances.reduce((sum, balance) => sum + balance, 0), 42501);
+  } finally { await app.close(); }
+});
 async function readyAll(request, room, players) {
   let next = room;
   for (const player of players) {

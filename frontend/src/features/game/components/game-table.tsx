@@ -63,6 +63,9 @@ export default function GameTable({
           <PlayingCard card={draggedCard} />
         </div>
       )}
+      {gestures.drag && canDiscard && <div className={`mobile-discard-target ${gestures.drag.overTable ? 'active' : ''}`} data-discard-zone>
+        Relâchez ici pour défausser
+      </div>}
       <GameHeader
         playerCount={playerCount}
         onPlayerCountChange={(count) => {
@@ -130,6 +133,7 @@ export default function GameTable({
             onSelect={actions.toggle}
             onDiscard={actions.discard}
             canPlay={canPlay}
+            canArrange={!pending && connected && game.phase !== 'finished'}
             canDiscard={canDiscard}
             validSelection={view.validSelection}
             useJokers={useJokers}

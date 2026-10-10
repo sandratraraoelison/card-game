@@ -37,6 +37,11 @@
 .drag-preview .playing-card {
   width: 75px;
 }
+.mobile-discard-target { display: none; }
+@media (max-width: 640px) {
+  .mobile-discard-target { display: grid; place-items: center; position: fixed; z-index: 99; top: 80px; left: 16px; right: 16px; min-height: 76px; padding: 16px; border: 2px dashed #d0ad68; border-radius: 16px; background: #15261ff2; color: #f5e9cc; text-align: center; box-shadow: 0 8px 24px #0008; }
+  .mobile-discard-target.active { border-style: solid; background: #276348; }
+}
 .game-board.drag-over-table {
   outline: 3px solid #d9bc78;
   outline-offset: 3px;
@@ -812,6 +817,9 @@ h1 > span {
 .hand-tools {
   display: flex;
   gap: 7px;
+}
+.hand-view-toggle {
+  display: none;
 }
 .hand-tools button {
   background: var(--surface);
@@ -1603,6 +1611,20 @@ h1 > span {
     width: 58px;
     min-width: 58px;
     flex-shrink: 0;
+  }
+  .hand-view-toggle {
+    display: inline-flex;
+    margin-top: 12px;
+  }
+  .hand-cards.hand-cards-all {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px 7px;
+    overflow: visible;
+  }
+  .hand-cards.hand-cards-all .playing-card {
+    width: 100%;
+    min-width: 0;
   }
   .hand-hint {
     flex-wrap: wrap;

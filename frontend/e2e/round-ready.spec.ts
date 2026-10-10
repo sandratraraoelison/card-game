@@ -9,12 +9,15 @@ for (const reported of [false, true]) test(`end screen ${reported ? 'with' : 'wi
   const finishedId = game.id;
   let readyIds: string[] = [];
   let revision = 1;
+  let closed = false;
   const members = game.players.map((player, index) => ({ id: player.id, displayName: `Ami ${index + 1}`, balance: 9000 }));
   try {
     const pages = await Promise.all(contexts.map(context => context.newPage()));
     for (let index = 0; index < pages.length; index++) {
       await pages[index].route('**/api/**', async route => {
         const pathname = new URL(route.request().url()).pathname;
+        if (pathname === '/api/rooms/123456' && route.request().method() === 'DELETE') { closed = true; await route.fulfill({ status: 204 }); return; }
+        if (closed && pathname.startsWith('/api/rooms/')) { await route.fulfill({ status: 404, json: { message: 'Salon terminé.' } }); return; }
         const room = () => ({ id: '123456', revision, name: 'Table test', capacity: 4, playerCount: 4, status: 'playing', hostId: 'p0', members, readyPlayerIds: readyIds, stake: 1000, pot: 4000, exposurePrize: 2000, finishPrize: 2000, carryover: reported ? 2000 : 0, finishCarryover: reported ? 2000 : 0, exposureWinnerId: reported ? undefined : 'p0', game: toGameView(game, `p${index}`) });
         let response: unknown;
         if (pathname.endsWith('/sessions/me')) response = members[index];
@@ -26,7 +29,7 @@ for (const reported of [false, true]) test(`end screen ${reported ? 'with' : 'wi
           revision++;
           if (readyIds.length === 4) { game = createGame(4, true); game.mode = 'remote'; readyIds = []; }
           response = room();
-        } else if (pathname === '/api/rooms') response = [room()];
+        } else if (pathname === '/api/rooms') response = closed ? [] : [room()];
         else response = room();
         await route.fulfill({ json: response });
       });
@@ -44,6 +47,10 @@ for (const reported of [false, true]) test(`end screen ${reported ? 'with' : 'wi
       if (!reported) await expect(result.getByText('Gain :', { exact: false })).toContainText('3');
     }
     await pages[0].screenshot({ path: testInfo.outputPath('round-result.png'), fullPage: true });
+    await expect(pages[1].getByRole('button', { name: 'Terminer le salon' })).toHaveCount(0);
+    pages[0].once('dialog', dialog => dialog.dismiss());
+    await pages[0].getByRole('button', { name: 'Terminer le salon' }).click();
+    expect(closed).toBe(false);
     for (const page of pages.slice(0, 3)) {
       await page.getByRole('button', { name: 'Prêt', exact: true }).click();
       await expect(page.getByRole('button', { name: 'Vous êtes prêt' })).toBeDisabled();
@@ -56,5 +63,9 @@ for (const reported of [false, true]) test(`end screen ${reported ? 'with' : 'wi
       await expect(page.getByRole('region', { name: 'Résultat de la manche' })).toHaveCount(0);
       await expect(page.locator('.hand-cards .playing-card')).toHaveCount(13);
     }
+    pages[0].once('dialog', dialog => dialog.accept());
+    await pages[0].getByRole('button', { name: 'Terminer le salon' }).click();
+    await expect(pages[0].getByRole('button', { name: 'Créer un salon', exact: true })).toBeVisible();
+    expect(closed).toBe(true);
   } finally { await Promise.all(contexts.map(context => context.close())); }
 });

@@ -3,6 +3,13 @@ export const MAX_STAKE = 100_000;
 export const isValidStake = (value: unknown): value is number =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 && value <= MAX_STAKE;
 export const formatAriary = (amount: number) => `${amount.toLocaleString('fr-FR')} Ar`;
+/** Return all unspent room funds on closure, with integer Ariary amounts. */
+export function refundRoom(playerIds: string[], amount: number) {
+  if (!playerIds.length) return [];
+  const share = Math.floor(amount / playerIds.length);
+  const remainder = amount % playerIds.length;
+  return playerIds.map((playerId, index) => ({ playerId, amount: share + (index < remainder ? 1 : 0) }));
+}
 export function roundPrizes(count: number, stake: number, carryover = 0, finishCarryover = 0) {
   return { exposurePrize: stake * 2 + carryover, finishPrize: stake * (count - 2) + finishCarryover };
 }

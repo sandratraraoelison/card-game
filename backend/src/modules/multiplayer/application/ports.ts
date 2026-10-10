@@ -9,6 +9,7 @@ export interface RoomRepository {
   balance(playerId: string): number;
   adjustBalance(playerId: string, amount: number): void;
   create(room: RoomRecord): void;
+  remove(id: string): void;
   find(id: string): RoomRecord | undefined;
   list(): RoomRecord[];
   /** Work, room revision increment and commit are synchronous/atomic; throwing rolls back. */

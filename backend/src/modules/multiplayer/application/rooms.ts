@@ -1,4 +1,4 @@
-import { isValidStake, roundPrizes, toGameView, type PlayerAccount, type RoomSummary, type RoomView } from '@rami/game';
+import { isValidStake, refundRoom, roundPrizes, toGameView, type PlayerAccount, type RoomSummary, type RoomView } from '@rami/game';
 import { ApplicationError, type RoomRecord } from '../domain/models';
 import type { Clock, IdentitySource, RoomRepository } from './ports';
 
@@ -49,6 +49,15 @@ export class Rooms {
       room.members = room.members.filter(p => p.id !== playerId);
       if (room.hostId === playerId) room.hostId = room.members[0]?.id ?? '';
       room.updatedAt = this.clock.now();
+    });
+  }
+  close(id: string, playerId: string): void {
+    this.repository.transact(id, room => {
+      if (room.hostId !== playerId) throw new ApplicationError(403, 'Seul l’hôte peut terminer le salon.');
+      const active = room.game && room.game.phase !== 'finished';
+      const amount = active ? (room.pot ?? 0) + (room.roundCarryover ?? 0) + (room.roundFinishCarryover ?? 0) : (room.carryover ?? 0) + (room.finishCarryover ?? 0);
+      for (const payment of refundRoom(room.members.map(member => member.id), amount)) this.repository.adjustBalance(payment.playerId, payment.amount);
+      this.repository.remove(id);
     });
   }
 }

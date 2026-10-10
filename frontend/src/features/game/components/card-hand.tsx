@@ -13,6 +13,7 @@ export interface CardHandProps {
   gestures: ReturnType<typeof useCardGestures>;
   onSelect: (id: string) => void;
   onDiscard: (id: string) => void;
+  showAll?: boolean;
 }
 export function CardHand({
   cards,
@@ -24,9 +25,10 @@ export function CardHand({
   gestures,
   onSelect,
   onDiscard,
+  showAll = false,
 }: CardHandProps) {
   return (
-    <div className="hand-cards" ref={handRef}>
+    <div className={`hand-cards${showAll ? " hand-cards-all" : ""}`} ref={handRef}>
       {cards.map((card) => (
         <PlayingCard
           key={card.id}

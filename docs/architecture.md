@@ -69,6 +69,8 @@ Les simulations `exposure` et `joker-win` sont choisies par la composition. `cre
 
 ## Compilation et vérification
 
+L'hôte peut terminer le salon après confirmation avec `DELETE /rooms/:id`. L'autorisation est vérifiée côté serveur. La suppression et le remboursement des fonds non dépensés utilisent une transaction unique : une manche active rend ses mises ; les reports encore disponibles sont répartis également entre les membres actuels, avec les éventuels Ariary restants attribués dans l'ordre des sièges. Les prix déjà versés ne sont pas repris. Les clients reviennent au choix de salon dès que la suppression est détectée.
+
 À la fin d'une manche en ligne, `OnlineRoundResult` affiche les gains et les reports à partir de propriétés explicites. Chaque membre confirme via `POST /rooms/:id/game/ready` avec l'identifiant de la manche terminée. Les confirmations sont persistées dans le salon. Le dernier joueur prêt déclenche le démarrage et le prélèvement atomiques ; l'hôte ne peut pas contourner cette attente via `/start`. Une confirmation répétée ne relance pas une deuxième manche, et un identifiant ancien ne rend pas le joueur prêt pour une nouvelle manche. La première manche reste démarrée par l'hôte depuis la salle d'attente.
 
 Le domaine applique deux exceptions à la victoire par déclaration à 13 : au moins trois vrais jokers au partage, ou les quatre vrais jokers réunis en main après une pioche dans le stock. Le résultat précise `jokers-deal` ou `jokers-play`. Ces victoires attribuent tous les prix engagés, reports inclus, au gagnant, même si un prix des 10 cartes avait été réservé auparavant. Le règlement reste atomique et ne peut être versé deux fois.
@@ -90,3 +92,5 @@ Next.js transpile les sources de `@rami/game`. Le backend les compile en CommonJ
 Les serveurs lancés par Playwright sont arrêtés après les vérifications. Un serveur frontend déjà actif est réutilisé. Voir [l’API](../backend/README.md) et [le déploiement](deployment.md).
 
 Un vrai joker défaussé reste visible et conservé dans l’historique, mais sa reprise est interdite par le moteur. Le joueur suivant doit piocher dans le stock. Les sélecteurs utilisent la même règle partagée pour désactiver les deux emplacements de reprise. Les faux jokers et les cartes ordinaires restent reprenables selon les règles habituelles.
+
+La commande reorder peut ranger uniquement la main du joueur authentifié même hors de son tour, sans changer le joueur actif ni la phase. Les autres actions restent réservées au joueur actif. L’adaptateur HTTP réessaie une seule fois une commande explicitement refusée pour révision périmée, après réception de la vue actuelle et avec un nouvel identifiant ; un accusé perdu conserve son identifiant pour la déduplication.

@@ -32,6 +32,9 @@ export class RoomsController {
   }
   @Get(':id')
   view(@Param('id') id: string, @Req() request: AuthenticatedRequest) { return this.rooms.view(id, request.player.id); }
+  @Delete(':id')
+  @HttpCode(204)
+  close(@Param('id') id: string, @Req() request: AuthenticatedRequest) { this.rooms.close(id, request.player.id); }
   @Post(':id/join')
   join(@Param('id') id: string, @Req() request: AuthenticatedRequest) { return this.rooms.join(id, request.player); }
   @Delete(':id/members/me')

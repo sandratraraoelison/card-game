@@ -56,6 +56,7 @@ export class NestLobbyService implements LobbyService {
     return room;
   }
   async leave(id: string) { await this.request(`/rooms/${encodeURIComponent(id)}/members/me`, 'DELETE'); this.save(); }
+  async close(id: string) { await this.request(`/rooms/${encodeURIComponent(id)}`, 'DELETE'); this.save(); }
   start(id: string) { return this.request<RoomView>(`/rooms/${encodeURIComponent(id)}/game/start`, 'POST'); }
   ready(id: string, gameId: string) { return this.request<RoomView>(`/rooms/${encodeURIComponent(id)}/game/ready`, 'POST', { gameId }); }
   command(id: string, command: CommandEnvelope) {

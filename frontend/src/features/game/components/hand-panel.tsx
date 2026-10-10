@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Feedback } from "@/shared/components/ui/feedback";
 import { CardHand, type CardHandProps } from "./card-hand";
 
@@ -8,9 +9,11 @@ interface HandActions {
   meld: (kind: "run" | "set") => void;
   setUseJokers: (value: boolean) => void;
   discardSelected: () => void;
+  reorder: (cardId: string, beforeId?: string) => void;
 }
 interface HandPanelProps extends CardHandProps {
   canPlay: boolean;
+  canArrange: boolean;
   canDiscard: boolean;
   validSelection: boolean;
   useJokers: boolean;
@@ -19,6 +22,7 @@ interface HandPanelProps extends CardHandProps {
 }
 export function HandPanel({
   canPlay,
+  canArrange,
   canDiscard,
   validSelection,
   useJokers,
@@ -26,6 +30,8 @@ export function HandPanel({
   actions,
   ...hand
 }: HandPanelProps) {
+  const [showAll, setShowAll] = useState(false);
+  const [arranging, setArranging] = useState(false);
   return (
     <section className="hand-section" aria-label="Votre main">
       <div className="section-heading">
@@ -37,30 +43,60 @@ export function HandPanel({
           </h2>
         </div>
         <div className="hand-tools">
-          <button onClick={actions.sort} disabled={!canPlay}>
+          <button onClick={actions.sort} disabled={!canArrange}>
             ⇅ Trier
           </button>
           <button
             aria-label="Déplacer la carte à gauche"
             onClick={() => actions.move(-1)}
-            disabled={!canPlay}
+            disabled={!canArrange || hand.selected.length !== 1}
           >
             ←
           </button>
           <button
             aria-label="Déplacer la carte à droite"
             onClick={() => actions.move(1)}
-            disabled={!canPlay}
+            disabled={!canArrange || hand.selected.length !== 1}
           >
             →
           </button>
         </div>
       </div>
-      <CardHand {...hand} />
+      <button
+        type="button"
+        className="hand-view-toggle button secondary"
+        aria-pressed={showAll}
+        onClick={() => { setShowAll(value => !value); setArranging(false); }}
+      >
+        {showAll ? "Vue normale" : "Voir toute la main"}
+      </button>
+      {showAll && <button
+        type="button"
+        className="hand-view-toggle button secondary"
+        aria-pressed={arranging}
+        disabled={!canArrange}
+        onClick={() => { setArranging(value => !value); actions.clearSelection(); }}
+      >
+        {arranging ? "Terminer le rangement" : "Réorganiser les cartes"}
+      </button>}
+      <CardHand {...hand} showAll={showAll} onSelect={id => {
+        if (showAll && arranging) {
+          if (!canArrange) return;
+          if (hand.selected.length === 1 && hand.selected[0] !== id) {
+            actions.reorder(hand.selected[0], id);
+            actions.clearSelection();
+            return;
+          }
+        }
+        hand.onSelect(id);
+      }} />
+      {showAll && arranging && <p className="hand-hint" role="status">
+        Touchez la carte à déplacer, puis la carte devant laquelle la placer. Vous pouvez aussi maintenir et glisser entre les lignes.
+      </p>}
       <div className="hand-hint">
         <span className="gesture-help">
           Glissez pour ranger · Double-clic pour défausser · Sur mobile :
-          maintenez puis glissez vers la table.
+          glissez vers le haut puis relâchez dans la zone de défausse. Maintenez pour ranger.
         </span>
         {validSelection && (
           <span className="valid-selection" role="status">
@@ -70,7 +106,7 @@ export function HandPanel({
         <span>
           {hand.selected.length
             ? `${hand.selected.length} carte${hand.selected.length > 1 ? "s" : ""} sélectionnée${hand.selected.length > 1 ? "s" : ""}`
-            : "Touchez les cartes pour les sélectionner."}
+            : "Sélectionnez une carte puis utilisez ← ou → pour la déplacer."}
         </span>
         {hand.selected.length > 0 && (
           <button onClick={actions.clearSelection}>Tout désélectionner</button>

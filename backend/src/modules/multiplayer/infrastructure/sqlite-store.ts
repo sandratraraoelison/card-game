@@ -33,6 +33,7 @@ export class SqliteSessions implements SessionRepository {
 }
 export class SqliteRooms implements RoomRepository {
   constructor(private readonly store: SqliteStore) {}
+  remove(id: string) { this.store.db.prepare('DELETE FROM rooms WHERE id = ?').run(id); }
   balance(playerId: string): number {
     const row = this.store.db.prepare('SELECT balance FROM wallets WHERE player_id = ?').get(playerId);
     return row ? Number(row.balance) : INITIAL_CREDITS;

@@ -47,12 +47,18 @@ export function useCardGestures(
         .some((el) => el.closest("[data-discard-zone]"));
       const cards =
         handRef.current?.querySelectorAll<HTMLElement>("[data-card-id]") ?? [];
-      const beforeId = Array.from(cards).find((el) => {
-        const rect = el.getBoundingClientRect();
-        return (
-          el.dataset.cardId !== g.cardId && g.x < rect.left + rect.width / 2
-        );
-      })?.dataset.cardId;
+      const positions = Array.from(cards).map(el => ({ el, rect: el.getBoundingClientRect() }));
+      // Choose the nearest row before comparing columns, including in the full-hand grid.
+      const nearest = positions.reduce<typeof positions[number] | undefined>((best, card) => {
+        const distance = Math.abs(g.y - (card.rect.top + card.rect.bottom) / 2);
+        const bestDistance = best ? Math.abs(g.y - (best.rect.top + best.rect.bottom) / 2) : Infinity;
+        return distance < bestDistance ? card : best;
+      }, undefined);
+      const rowTop = nearest?.rect.top;
+      const beforeId = positions.find(({ el, rect }) =>
+        el.dataset.cardId !== g.cardId && rowTop !== undefined &&
+        (rect.top > rowTop + 15 || (Math.abs(rect.top - rowTop) <= 15 && g.x < rect.left + rect.width / 2))
+      )?.el.dataset.cardId;
       return { cardId: g.cardId, x: g.x, y: g.y, overTable, beforeId };
     },
     [handRef],
@@ -144,11 +150,17 @@ export function useCardGestures(
     g.x = event.clientX;
     g.y = event.clientY;
     const moved = Math.hypot(g.x - g.startX, g.y - g.startY) > 8;
-    if (!g.active && moved) {
+    if (!g.active && !g.scrolling && moved) {
       if (event.pointerType === "mouse") g.active = true;
-      else {
+      else if (g.startY - g.y > 16 && Math.abs(g.y - g.startY) > Math.abs(g.x - g.startX) * 1.3) {
         clearTimeout(g.timer);
-        g.scrolling = true;
+        g.active = true;
+      }
+      else {
+        if (Math.abs(g.x - g.startX) > 8) {
+          clearTimeout(g.timer);
+          g.scrolling = true;
+        }
       }
     }
     if (g.scrolling) {

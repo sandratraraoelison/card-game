@@ -22,6 +22,19 @@ const deck = createDeck();
 const card = (rank: number, suit: Card["suit"] = "spades", copy = 0) =>
   deck.find((c) => c.rank === rank && c.suit === suit && c.copy === copy)!;
 const reference = card(4);
+it('allows a player to arrange only their own hand outside their turn', () => {
+  const game = createGame(4, false, () => 0.999999);
+  const reordered = [...game.players[1].hand].reverse().map(card => card.id);
+  const envelope = { gameId: game.id, playerId: 'p1', expectedRevision: game.revision, commandId: 'arrange', command: { type: 'reorder' as const, cardIds: reordered } };
+  const result = applyCommand(game, envelope);
+  expect(result.result.ok).toBe(true);
+  expect(result.state.players[1].hand.map(card => card.id)).toEqual(reordered);
+  expect(result.state.players[0].hand).toEqual(game.players[0].hand);
+  expect(result.state.currentPlayerIndex).toBe(game.currentPlayerIndex);
+  expect(result.state.phase).toBe(game.phase);
+  expect(applyCommand(game, { ...envelope, command: { type: 'draw', source: 'stock' } }).result.ok).toBe(false);
+  expect(applyCommand(game, { ...envelope, command: { type: 'reorder', cardIds: game.players[0].hand.map(card => card.id) } }).result.ok).toBe(false);
+});
 const group = (cards: Card[], kind: Meld["kind"], useJokers = false): Meld => ({
   id: cards.map((c) => c.id).join(":"),
   cardIds: cards.map((c) => c.id),

@@ -74,6 +74,9 @@ export function useOnlineLobby(service: LobbyService) {
     join: (id: string) => run(async () => enter(await service.join(id))),
     start: () => run(async () => { if (roomId) receive(await service.start(roomId)); }),
     ready: () => run(async () => { if (roomId && room?.game) receive(await service.ready(roomId, room.game.id)); }),
+    close: () => run(async () => {
+      if (roomId && session) { await service.close(roomId); sequence.current++; setRoom(undefined); setIdentity({ session }); }
+    }),
     leave: () => run(async () => {
       if (roomId && session) { await service.leave(roomId); sequence.current++; setRoom(undefined); setIdentity({ session }); }
     }),

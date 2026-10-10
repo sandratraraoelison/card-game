@@ -11,6 +11,15 @@ function fixture() {
   return { snapshot, room, command };
 }
 describe('network game adapter', () => {
+  it('refreshes a rejected stale action after another player arranges their hand', async () => {
+    const { snapshot, room, command } = fixture();
+    const dispatch = vi.fn().mockResolvedValueOnce({ result: { ok: false, error: 'La partie a changé. Réessayez avec son état actuel.' }, room }).mockResolvedValueOnce({ result: { ok: true }, room: { ...room, game: { ...room.game, revision: 2 } } });
+    const service = new NestGameService('p0', snapshot, room.id, { command: dispatch } as unknown as LobbyService, vi.fn());
+    expect(await service.dispatch(command)).toEqual({ ok: true });
+    expect(dispatch.mock.calls[1][1].expectedRevision).toBe(1);
+    expect(dispatch.mock.calls[1][1].commandId).not.toBe(command.commandId);
+    expect(service.getSnapshot().revision).toBe(2);
+  });
   it('retries a lost acknowledgement with the same command and applies only newer revisions', async () => {
     const { snapshot, room, command } = fixture();
     const dispatch = vi.fn().mockRejectedValueOnce(new NetworkError('Offline')).mockResolvedValueOnce({ result: { ok: true }, room });
