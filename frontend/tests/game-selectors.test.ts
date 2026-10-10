@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createGame, DEMO_GROUPS, toGameView } from "@rami/game";
+import { createDeck, createGame, DEMO_GROUPS, toGameView } from "@rami/game";
 import {
   reorderBefore,
   selectGameView,
@@ -7,8 +7,20 @@ import {
 } from "../src/features/game/application/game-selectors";
 
 describe("presentation selectors respect domain rules and viewer identity", () => {
+  it('keeps a discarded true joker visible but unavailable to take', () => {
+    const game = createGame(4, true);
+    const deck = createDeck();
+    game.reference = deck.find(card => card.id === '0-spades-4')!;
+    game.discards = [{ id: 'joker', card: deck.find(card => card.id === '0-hearts-4')!, fromPlayerId: 'p1', toPlayerId: 'p0', pickedUp: false, turn: 1 }];
+    const view = selectGameView(toGameView(game, 'p0'), 'p0', [], false);
+    expect(view.incoming?.id).toBe('joker');
+    expect(view.received).toHaveLength(1);
+    expect(view.top).toBeUndefined();
+    game.discards[0].card = deck.find(card => card.id === '0-clubs-4')!;
+    expect(selectGameView(toGameView(game, 'p0'), 'p0', [], false).top?.id).toBe('joker');
+  });
   it("keeps chronological discards including picked-up cards for every seat", () => {
-    const game = createGame(4);
+    const game = createGame(4, false, () => 0.999999);
     game.discards = [
       {
         id: "d1",
@@ -45,7 +57,7 @@ describe("presentation selectors respect domain rules and viewer identity", () =
     expect(view.opponents[0].fromName).toBe("Hery");
   });
   it("finds the current viewer without assuming they occupy seat zero", () => {
-    const game = createGame(5);
+    const game = createGame(5, false, () => 0.999999);
     game.currentPlayerIndex = 3;
     const view = selectGameView(toGameView(game, "p3"), "p3", [], false);
     expect(view.me.id).toBe("p3");
@@ -101,7 +113,7 @@ describe("presentation selectors respect domain rules and viewer identity", () =
     expect(ref.suit).toBe("spades");
   });
   it("moves one unique exemplar without mutating cards or losing duplicates", () => {
-    const hand = createGame().players[0].hand,
+    const hand = createGame(4, false, () => 0.999999).players[0].hand,
       original = hand.map((card) => card.id);
     expect(reorderBefore(hand, original[0], original[3]).slice(0, 4)).toEqual([
       original[1],

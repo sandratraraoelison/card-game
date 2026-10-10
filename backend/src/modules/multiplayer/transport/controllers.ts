@@ -27,8 +27,8 @@ export class RoomsController {
   list() { return this.rooms.list(); }
   @Post()
   create(@Req() request: AuthenticatedRequest, @Body() body: unknown) {
-    const b = object(body, ['name', 'capacity']);
-    return this.rooms.create(request.player, text(b.name, 60), capacity(b.capacity));
+    const b = object(body, ['name', 'capacity', 'stake']);
+    return this.rooms.create(request.player, text(b.name, 60), capacity(b.capacity), b.stake === undefined ? 0 : b.stake as number);
   }
   @Get(':id')
   view(@Param('id') id: string, @Req() request: AuthenticatedRequest) { return this.rooms.view(id, request.player.id); }
@@ -53,5 +53,11 @@ export class GamesController {
   command(@Param('id') id: string, @Req() request: AuthenticatedRequest, @Body() body: unknown) {
     const result = this.games.command(id, request.player.id, envelope(body));
     return { result, room: this.rooms.view(id, request.player.id) };
+  }
+  @Post('ready')
+  @HttpCode(200)
+  ready(@Param('id') id: string, @Req() request: AuthenticatedRequest, @Body() body: unknown) {
+    this.games.ready(id, request.player.id, text(object(body, ['gameId']).gameId, 100));
+    return this.rooms.view(id, request.player.id);
   }
 }

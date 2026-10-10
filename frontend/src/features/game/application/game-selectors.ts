@@ -7,6 +7,8 @@ import {
   jokerKind,
   validateMeld,
   detectAdjacentMelds,
+  findValidExposure,
+  canPickUpDiscard,
 } from "@rami/game";
 
 export interface MeldView {
@@ -77,6 +79,7 @@ export function selectGameView(
     meld.cardIds.forEach((id) => validCards.add(id)),
   );
   const incoming = game.discards.findLast((discard) => !discard.pickedUp);
+  const blockedJoker = incoming?.toPlayerId === me.id && !canPickUpDiscard(incoming.card, game.reference);
   const previousPlayer =
     game.players[
       previousPlayerIndex(game.players.indexOf(me), game.players.length)
@@ -86,10 +89,11 @@ export function selectGameView(
       ? (game.result?.reason ?? "Manche terminée.")
       : myTurn
         ? game.phase === "draw"
-          ? "C’est à vous. Piochez une carte pour commencer."
+          ? blockedJoker ? "Vrai joker défaussé : vous devez piocher." : "C’est à vous. Piochez une carte pour commencer."
           : "À vous de jouer. Préparez vos combinaisons, puis défaussez."
         : `${turn.name} réfléchit…${turn.simulated ? " Joueur simulé." : ""}`;
   return {
+    exposureMelds: findValidExposure(hand, [...me.melds, ...suggestions], game.reference, game.rules),
     me,
     hand,
     myTurn,
@@ -103,7 +107,7 @@ export function selectGameView(
     incomingFrom: game.players.find(
       (player) => player.id === incoming?.fromPlayerId,
     )?.name,
-    top: incoming?.toPlayerId === me.id ? incoming : undefined,
+    top: incoming?.toPlayerId === me.id && canPickUpDiscard(incoming.card, game.reference) ? incoming : undefined,
     received: game.discards.filter((discard) => discard.toPlayerId === me.id),
     previousPlayerName: previousPlayer.name,
     opponents: game.players

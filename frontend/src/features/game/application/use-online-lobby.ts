@@ -7,6 +7,7 @@ export function useOnlineLobby(service: LobbyService) {
   const [identity, setIdentity] = useState(() => service.restore());
   const [room, setRoom] = useState<RoomView>();
   const [rooms, setRooms] = useState<RoomSummary[]>([]);
+  const [balance, setBalance] = useState<number>();
   const [error, setError] = useState('');
   const [connectionError, setConnectionError] = useState('');
   const [connected, setConnected] = useState(false);
@@ -28,8 +29,9 @@ export function useOnlineLobby(service: LobbyService) {
     async function poll() {
       const version = sequence.current;
       try {
-        const data = roomId ? await service.get(roomId) : await service.list();
+        const [data, account] = await Promise.all([roomId ? service.get(roomId) : service.list(), service.account()]);
         if (stopped || version !== sequence.current) return;
+        setBalance(account.balance);
         if (roomId) receive(data as RoomView); else setRooms(data as RoomSummary[]);
         setConnected(true);
         setConnectionError('');
@@ -66,11 +68,12 @@ export function useOnlineLobby(service: LobbyService) {
     setIdentity({ session, roomId: next.id });
   }
   return {
-    session, room, rooms, error: error || connectionError, connected, busy, receive,
+    session, room, rooms, balance, error: error || connectionError, connected, busy, receive,
     login: (name: string) => run(async () => { setIdentity({ session: await service.login(name) }); }),
-    create: (name: string, capacity: 4 | 5) => run(async () => enter(await service.create(name, capacity))),
+    create: (name: string, capacity: 4 | 5, stake: number) => run(async () => enter(await service.create(name, capacity, stake))),
     join: (id: string) => run(async () => enter(await service.join(id))),
     start: () => run(async () => { if (roomId) receive(await service.start(roomId)); }),
+    ready: () => run(async () => { if (roomId && room?.game) receive(await service.ready(roomId, room.game.id)); }),
     leave: () => run(async () => {
       if (roomId && session) { await service.leave(roomId); sequence.current++; setRoom(undefined); setIdentity({ session }); }
     }),

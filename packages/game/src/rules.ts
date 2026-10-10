@@ -183,3 +183,37 @@ export function validateExposure(
 ): MeldValidation {
   return validateLayout(hand, melds, 10, reference, rules);
 }
+
+/** A finish may include a natural 4 + 3 + 3 without a prior exposure command. */
+export function includesValidExposure(hand: Card[], melds: Meld[], reference: Card, rules = DEFAULT_RULES): boolean {
+  return !!findValidExposure(hand, melds, reference, rules);
+}
+
+export function findValidExposure(hand: Card[], melds: Meld[], reference: Card, rules = DEFAULT_RULES): Meld[] | undefined {
+  for (let a = 0; a < melds.length; a++) {
+    for (let b = a + 1; b < melds.length; b++) {
+      for (let c = b + 1; c < melds.length; c++) {
+        const groups = [melds[a], melds[b], melds[c]];
+        if (validateExposure(hand, groups, reference, rules).valid) return groups;
+      }
+    }
+  }
+}
+
+export const countTrueJokers = (hand: Card[], reference: Card) => hand.filter(card => jokerKind(card, reference) === 'true').length;
+export const canPickUpDiscard = (card: Card, reference: Card) => jokerKind(card, reference) !== 'true';
+export function countIdenticalPairs(hand: Card[]): number {
+  const copies = new Map<string, Set<number>>();
+  for (const card of hand) {
+    const key = `${card.suit}-${card.rank}`;
+    const pair = copies.get(key) ?? new Set<number>();
+    pair.add(card.copy);
+    copies.set(key, pair);
+  }
+  return [...copies.values()].filter(pair => pair.size === 2).length;
+}
+export function initialDealOutcome(players: Pick<import('./types').Player, 'id' | 'hand'>[], reference: Card) {
+  const winner = players.find(player => countTrueJokers(player.hand, reference) >= 3);
+  if (winner) return { winnerId: winner.id, redeal: false };
+  return { winnerId: undefined, redeal: players.some(player => countIdenticalPairs(player.hand) >= 4) };
+}

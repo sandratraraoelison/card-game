@@ -44,8 +44,9 @@ export class NestLobbyService implements LobbyService {
   }
   list() { return this.request<RoomSummary[]>('/rooms'); }
   get(id: string) { return this.request<RoomView>(`/rooms/${encodeURIComponent(id)}`); }
-  async create(name: string, capacity: 4 | 5) {
-    const room = await this.request<RoomView>('/rooms', 'POST', { name, capacity });
+  account() { return this.request<GuestSession['player']>('/sessions/me'); }
+  async create(name: string, capacity: 4 | 5, stake = 0) {
+    const room = await this.request<RoomView>('/rooms', 'POST', { name, capacity, stake });
     this.save(room.id);
     return room;
   }
@@ -56,6 +57,7 @@ export class NestLobbyService implements LobbyService {
   }
   async leave(id: string) { await this.request(`/rooms/${encodeURIComponent(id)}/members/me`, 'DELETE'); this.save(); }
   start(id: string) { return this.request<RoomView>(`/rooms/${encodeURIComponent(id)}/game/start`, 'POST'); }
+  ready(id: string, gameId: string) { return this.request<RoomView>(`/rooms/${encodeURIComponent(id)}/game/ready`, 'POST', { gameId }); }
   command(id: string, command: CommandEnvelope) {
     return this.request<{ result: CommandResult; room: RoomView }>(`/rooms/${encodeURIComponent(id)}/game/commands`, 'POST', command);
   }

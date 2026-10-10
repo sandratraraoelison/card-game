@@ -16,6 +16,7 @@ interface GameBoardProps {
   discardFrom?: string;
   canDraw: boolean;
   canTakeDiscard: boolean;
+  takeableDiscardId?: string;
   status: string;
   received: Discard[];
   previousPlayerName: string;
@@ -81,6 +82,8 @@ export function GameBoard(props: GameBoardProps) {
           fromName={props.previousPlayerName}
           discards={props.received}
           onHistory={props.onHistory}
+          takeableDiscardId={props.canTakeDiscard ? props.takeableDiscardId : undefined}
+          onTakeDiscard={() => props.onDraw('discard')}
         />
       </div>
       {props.result}

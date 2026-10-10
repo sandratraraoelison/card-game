@@ -8,11 +8,15 @@ export function PlayerDiscards({
   fromName,
   discards,
   onHistory,
+  takeableDiscardId,
+  onTakeDiscard,
 }: {
   playerName: string;
   fromName: string;
   discards: Discard[];
   onHistory: () => void;
+  takeableDiscardId?: string;
+  onTakeDiscard?: () => void;
 }) {
   return (
     <section
@@ -41,8 +45,9 @@ export function PlayerDiscards({
               className={discard.pickedUp ? styles.pickedUp : undefined}
               title={`De ${fromName} · Tour ${discard.turn}${discard.pickedUp ? " · Carte reprise" : ""}`}
             >
-              <PlayingCard card={discard.card} small />
+              <PlayingCard card={discard.card} small onClick={discard.id === takeableDiscardId ? onTakeDiscard : undefined} />
               <span>Tour {discard.turn}</span>
+              {discard.id === takeableDiscardId && <strong>Prendre</strong>}
               {discard.pickedUp && <strong>Reprise</strong>}
             </li>
           ))}

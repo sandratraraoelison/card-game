@@ -4,6 +4,8 @@
 
 ```text
 packages/game/src/
+  economy.ts                     Crédits fictifs Ar, validation des mises et règlement du pot
+  identifiers.ts                 UUID v4 via getRandomValues, compatible HTTP sur réseau local
   types.ts, network.ts           Entités, commandes, vues, ports GameService/LobbyService
   rules.ts                       Règles et validation, sans framework
   engine.ts                      Distribution, transitions, scénarios locaux
@@ -67,6 +69,16 @@ Les simulations `exposure` et `joker-win` sont choisies par la composition. `cre
 
 ## Compilation et vérification
 
+À la fin d'une manche en ligne, `OnlineRoundResult` affiche les gains et les reports à partir de propriétés explicites. Chaque membre confirme via `POST /rooms/:id/game/ready` avec l'identifiant de la manche terminée. Les confirmations sont persistées dans le salon. Le dernier joueur prêt déclenche le démarrage et le prélèvement atomiques ; l'hôte ne peut pas contourner cette attente via `/start`. Une confirmation répétée ne relance pas une deuxième manche, et un identifiant ancien ne rend pas le joueur prêt pour une nouvelle manche. La première manche reste démarrée par l'hôte depuis la salle d'attente.
+
+Le domaine applique deux exceptions à la victoire par déclaration à 13 : au moins trois vrais jokers au partage, ou les quatre vrais jokers réunis en main après une pioche dans le stock. Le résultat précise `jokers-deal` ou `jokers-play`. Ces victoires attribuent tous les prix engagés, reports inclus, au gagnant, même si un prix des 10 cartes avait été réservé auparavant. Le règlement reste atomique et ne peut être versé deux fois.
+
+Une main initiale contenant au moins quatre paires de cartes identiques (valeur, enseigne, deux copies distinctes) provoque une redistribution automatique, avec nouvelle référence et sans prélèvement supplémentaire. La victoire par jokers a priorité ; le premier siège éligible gagne si plusieurs joueurs satisfont la condition. Le moteur limite à 100 tentatives pour éviter une boucle infinie avec une source aléatoire défaillante ; une erreur annule la transaction et tous les prélèvements. Les scénarios guidés conservent leur distribution prévue.
+
+Les crédits fictifs sont exprimés en Ar, sans paiement. Une session reçoit un solde initial de 10 000 Ar. La mise du salon est un entier entre 0 et 100 000 Ar et reste identique à chaque manche. Les soldes sont conservés dans la table SQLite `wallets`, séparément des sessions et des salons. Les anciens salons sans mise restent gratuits.
+
+Le prélèvement de tous les joueurs et le démarrage utilisent la même transaction SQLite : un solde insuffisant annule tout le démarrage. Le moteur partagé détermine la victoire valide à 13 cartes ou la manche nulle ; `settlePot` attribue deux mises plus le report au premier joueur ayant explicitement exposé 10 cartes naturelles, et les autres mises au gagnant à 13 cartes. Les gains sont versés à la fin de la manche. Une déclaration directe valide à 13 gagne aussi le prix des 10 cartes encore disponible si ses combinaisons contiennent un sous-ensemble naturel valide de 4 + 3 + 3. Les prix des 10 cartes et de la victoire ont des reports distincts : chaque prix non remporté est ajouté à celui de la manche suivante, y compris en cas de manche nulle. Les mises ne sont pas remboursées sur une manche nulle ; un prix des 10 cartes déjà remporté est versé à son premier exposant. Le report, le premier exposant et le report engagé dans la manche sont persistés avec le salon. Le versement et la sauvegarde du résultat sont atomiques, avec un identifiant de manche réglée pour empêcher les doubles versements. L'interface n'effectue aucun calcul de solde faisant autorité.
+
 Next.js transpile les sources de `@rami/game`. Le backend les compile en CommonJS avec déclarations avant build/dev/test ; `packages/game/dist/package.json` isole ce format du paquet ESM. Ne jamais exécuter les sources TypeScript du domaine directement en production Node.
 
 - `npm test` : règles partagées et API HTTP, transactions, permissions, persistance.
@@ -76,3 +88,5 @@ Next.js transpile les sources de `@rami/game`. Le backend les compile en CommonJ
 - `npm run build` : deux applications.
 
 Les serveurs lancés par Playwright sont arrêtés après les vérifications. Un serveur frontend déjà actif est réutilisé. Voir [l’API](../backend/README.md) et [le déploiement](deployment.md).
+
+Un vrai joker défaussé reste visible et conservé dans l’historique, mais sa reprise est interdite par le moteur. Le joueur suivant doit piocher dans le stock. Les sélecteurs utilisent la même règle partagée pour désactiver les deux emplacements de reprise. Les faux jokers et les cartes ordinaires restent reprenables selon les règles habituelles.

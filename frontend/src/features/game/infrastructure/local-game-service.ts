@@ -1,3 +1,4 @@
+import { createIdentifier } from "@rami/game";
 import {
   applyCommand,
   Card,
@@ -32,7 +33,7 @@ export class LocalGameService implements GameService {
         { type: "expose" },
       ];
       for (const command of commands) {
-        const applied = applyCommand(this.state, { gameId: this.state.id, playerId: this.playerId, expectedRevision: this.state.revision, commandId: crypto.randomUUID(), command });
+        const applied = applyCommand(this.state, { gameId: this.state.id, playerId: this.playerId, expectedRevision: this.state.revision, commandId: createIdentifier(), command });
         if (!applied.result.ok) throw new Error(applied.result.error);
         this.state = applied.state;
       }
@@ -75,7 +76,7 @@ export class LocalGameService implements GameService {
         gameId: this.state.id,
         playerId: p.id,
         expectedRevision: this.state.revision,
-        commandId: crypto.randomUUID(),
+        commandId: createIdentifier(),
         command:
           this.state.phase === "draw"
             ? { type: "draw", source: "stock" }

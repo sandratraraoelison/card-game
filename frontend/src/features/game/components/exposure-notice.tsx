@@ -24,7 +24,7 @@ export function ExposureNotice({ playerName, cards }: { playerName: string; card
   return <section ref={panel} className={styles.panel} aria-label={`Annonce des 10 cartes de ${playerName}`}>
     <h2>{playerName} expose 10 cartes</h2>
     <p role="status">Combinaisons naturelles · La manche continue.</p>
-    <div className={styles.cards}>{cards.map(card => <PlayingCard key={card.id} card={card} small />)}</div>
+    <div className={styles.cards}>{cards.map(card => <PlayingCard key={card.id} card={card} />)}</div>
     <button className="button secondary" onClick={() => setDismissed(true)}>Fermer l’annonce</button>
     <small>Fermeture automatique dans {remaining} s</small>
   </section>;

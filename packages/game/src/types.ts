@@ -54,7 +54,7 @@ export interface GameState {
   phase: "draw" | "discard" | "finished";
   turn: number;
   rules: RulesConfig;
-  result?: { playerId?: string; pattern?: 13; reason: string };
+  result?: { playerId?: string; pattern?: 13; victory?: 'jokers-deal' | 'jokers-play'; reason: string };
   log: string[];
   demo: boolean;
 }
@@ -93,6 +93,13 @@ export interface GameService {
   dispose(): void;
 }
 export interface RoomSummary {
+  stake?: number;
+  pot?: number;
+  carryover?: number;
+  finishCarryover?: number;
+  exposurePrize?: number;
+  finishPrize?: number;
+  exposureWinnerId?: string;
   id: string;
   name: string;
   playerCount: number;
@@ -100,6 +107,7 @@ export interface RoomSummary {
   status: "waiting" | "playing";
 }
 export interface PlayerAccount {
+  balance?: number;
   id: string;
   displayName: string;
   avatarUrl?: string;

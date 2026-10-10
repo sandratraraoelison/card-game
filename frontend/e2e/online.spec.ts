@@ -10,6 +10,10 @@ for (const count of [4, 5]) {
     })));
     try {
       const pages = await Promise.all(contexts.map(context => context.newPage()));
+      // LAN HTTP does not expose randomUUID, even though getRandomValues works.
+      await Promise.all(contexts.map(context => context.addInitScript(() => {
+        Object.defineProperty(window.crypto, 'randomUUID', { value: undefined, configurable: true });
+      })));
       const errors: string[] = [];
       pages.forEach(page => page.on('pageerror', error => errors.push(error.message)));
       await Promise.all(pages.map(async (page, i) => {
@@ -21,11 +25,16 @@ for (const count of [4, 5]) {
       const host = pages[0];
       await host.getByLabel('Nom du salon', { exact: true }).fill(`Table ${count}`);
       await host.getByLabel('Nombre de joueurs').selectOption(String(count));
+      await host.getByLabel('Mise par joueur (Ar)').fill('2000');
       await host.getByRole('button', { name: 'Créer le salon', exact: true }).click();
       await expect(host.getByRole('region', { name: 'Salle d’attente' })).toBeVisible();
+      await expect(host.getByText('Mise par joueur :', { exact: false })).toContainText('2');
       const code = await host.getByLabel('Code du salon', { exact: true }).inputValue();
+      expect(code).toMatch(/^[0-9]{6}$/);
       await expect(host.getByRole('button', { name: 'Démarrer la partie' })).toBeDisabled();
       for (const page of pages.slice(1)) {
+        await page.getByRole('button', { name: 'Rejoindre un salon', exact: true }).click();
+        await expect(page.getByLabel('Nom du salon', { exact: true })).toHaveCount(0);
         await page.getByLabel('Code du salon', { exact: true }).fill(code);
         await page.getByRole('button', { name: 'Rejoindre avec le code' }).click();
         await expect(page.getByRole('region', { name: 'Salle d’attente' })).toBeVisible();
@@ -33,6 +42,7 @@ for (const count of [4, 5]) {
       await expect(host.getByRole('button', { name: 'Démarrer la partie' })).toBeEnabled();
       await host.getByRole('button', { name: 'Démarrer la partie' }).click();
       for (const page of pages) {
+        await expect(page.getByText('Solde fictif :', { exact: false })).toContainText('8');
         await expect(page.locator('.hand-cards .playing-card')).toHaveCount(13);
         await expect(page.locator('.opponent')).toHaveCount(count - 1);
         await expect(page.getByText('Mode distant', { exact: true })).toBeVisible();
@@ -46,7 +56,8 @@ for (const count of [4, 5]) {
       await host.getByRole('button', { name: 'Défausser', exact: false }).click();
       const next = pages[count - 1];
       await expect(next.getByRole('button', { name: 'Piocher une carte', exact: true })).toBeEnabled();
-      await next.getByRole('button', { name: 'Prendre la dernière défausse' }).click();
+      await expect(next.getByRole('button', { name: 'Prendre la dernière défausse' })).toBeEnabled();
+      await next.getByRole('region', { name: 'Cartes défaussées devant Vous' }).locator('button.playing-card').click();
       await expect(next.locator('.hand-cards .playing-card')).toHaveCount(14);
       const before = await next.locator('.hand-cards [data-card-id]').evaluateAll(cards => cards.map(c => c.getAttribute('data-card-id')));
       await next.reload();

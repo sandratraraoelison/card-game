@@ -1,3 +1,4 @@
+import { createIdentifier } from "./identifiers";
 import { nextPlayerIndex } from "./turn-order";
 import {
   Card,
@@ -16,6 +17,9 @@ import {
   validateFinish,
   validateExposure,
   validateMeld,
+  countTrueJokers,
+  initialDealOutcome,
+  canPickUpDiscard,
 } from "./rules";
 export const DEMO_GROUPS = [
   ["0-hearts-5", "0-hearts-6", "0-hearts-7", "0-hearts-8"],
@@ -27,7 +31,7 @@ const JOKER_DEMO_GROUPS = [
   ["0-hearts-5", "0-hearts-6", "0-hearts-4", "0-hearts-8"],
   ...DEMO_GROUPS.slice(1),
 ];
-export function createGame(
+function dealGame(
   count: 4 | 5 = 4,
   demo: boolean | "joker" = false,
   random = Math.random,
@@ -67,7 +71,7 @@ export function createGame(
     deck.unshift(draw);
   } else for (const player of players) player.hand = deck.splice(0, 13);
   return {
-    id: crypto.randomUUID(),
+    id: createIdentifier(),
     revision: 0,
     mode: "local",
     players,
@@ -85,6 +89,24 @@ export function createGame(
         : "Les cartes sont distribuées. À vous de piocher.",
     ],
   };
+}
+
+export function createGame(count: 4 | 5 = 4, demo: boolean | 'joker' = false, random = Math.random, rules: RulesConfig = DEFAULT_RULES): GameState {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const game = dealGame(count, demo, random, rules);
+    // Guided exercises preserve their scripted deal.
+    if (demo) return game;
+    const outcome = initialDealOutcome(game.players, game.reference);
+    if (outcome.winnerId) {
+      const winner = game.players.find(player => player.id === outcome.winnerId)!;
+      game.phase = 'finished';
+      game.result = { playerId: winner.id, victory: 'jokers-deal', reason: `${winner.name} reçoit au moins 3 vrais jokers : victoire immédiate, tous les prix !` };
+      game.log.unshift(game.result.reason);
+    } else if (outcome.redeal) continue;
+    if (attempt) game.log.unshift(`${attempt} partage(s) annulé(s) pour au moins 4 paires identiques. Nouvelle distribution sans nouvelle mise.`);
+    return game;
+  }
+  throw new Error('Impossible de distribuer une main sans quatre paires après 100 partages.');
 }
 
 /** A completed local example, won through the same commands as a real turn. */
@@ -108,7 +130,7 @@ export function createJokerWinDemo(count: 4 | 5 = 4): GameState {
       gameId: state.id,
       playerId: state.players[0].id,
       expectedRevision: state.revision,
-      commandId: crypto.randomUUID(),
+      commandId: createIdentifier(),
       command,
     });
     if (!applied.result.ok) throw new Error(applied.result.error);
@@ -193,12 +215,19 @@ export function applyCommand(
         const top = next.discards.findLast((d) => !d.pickedUp);
         if (!top || top.toPlayerId !== p.id)
           return fail("Aucune défausse disponible devant vous.");
+        if (!canPickUpDiscard(top.card, next.reference))
+          return fail('Un vrai joker défaussé ne peut pas être repris. Piochez une carte.');
         top.pickedUp = true;
         card = top.card;
       }
       if (!card) return fail("La pioche est vide.");
       p.hand.push(card);
       next.phase = "discard";
+      if (countTrueJokers(p.hand, next.reference) >= 4) {
+        next.phase = 'finished';
+        next.result = { playerId: p.id, victory: 'jokers-play', reason: `${p.name} possède 4 vrais jokers : victoire immédiate, tous les prix !` };
+        log(next.result.reason);
+      }
       log(
         `${p.name} pioche ${command.source === "stock" ? "une carte" : "dans la défausse"}.`,
       );

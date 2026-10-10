@@ -1,5 +1,7 @@
 "use client";
 
+import { createIdentifier } from "@rami/game";
+
 import { useRef, useState, useSyncExternalStore } from "react";
 import { DEMO_GROUPS, GameCommand, GameService, SUITS } from "@rami/game";
 import { reorderBefore, selectGameView } from "./game-selectors";
@@ -33,7 +35,7 @@ export function useGameController(service: GameService) {
         gameId: current.id,
         playerId: service.playerId,
         expectedRevision: current.revision,
-        commandId: crypto.randomUUID(),
+        commandId: createIdentifier(),
         command,
       });
       setMessage(
@@ -96,7 +98,7 @@ export function useGameController(service: GameService) {
         !(await send({
           type: "meld",
           meld: {
-            id: crypto.randomUUID(),
+            id: createIdentifier(),
             cardIds,
             kind: index === 0 || index === 2 ? "run" : "set",
             useJokers: false,
@@ -150,7 +152,7 @@ export function useGameController(service: GameService) {
       void send(
         {
           type: "meld",
-          meld: { id: crypto.randomUUID(), cardIds: selected, kind, useJokers },
+          meld: { id: createIdentifier(), cardIds: selected, kind, useJokers },
         },
         "Combinaison préparée. Vous pouvez encore la modifier.",
       );
@@ -162,13 +164,17 @@ export function useGameController(service: GameService) {
       const meld = view.suggestions.find((item) => item.id === id);
       if (meld)
         void send(
-          { type: "meld", meld: { ...meld, id: crypto.randomUUID() } },
+          { type: "meld", meld: { ...meld, id: createIdentifier() } },
           "Combinaison préparée.",
         );
     },
     expose: () => {
+      if (!view.myTurn || !view.exposureMelds) {
+        setMessage({ text: 'Préparez 10 cartes naturelles valides en 4 + 3 + 3 avant de les afficher, à votre tour.', error: true });
+        return;
+      }
       void send(
-        { type: "expose", melds: [...view.me.melds, ...view.suggestions] },
+        { type: "expose", melds: view.exposureMelds },
         "10 cartes exposées. La manche continue : piochez ou défaussez selon votre tour.",
         false,
       );

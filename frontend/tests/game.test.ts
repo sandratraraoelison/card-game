@@ -108,7 +108,7 @@ describe("deck and joker allocation", () => {
     });
   for (const count of [4, 5] as const)
     it(`deals 13 cards to ${count} players and removes reference`, () => {
-      const game = createGame(count);
+      const game = createGame(count, false, () => 0.999999);
       game.players.forEach((p) => expect(p.hand).toHaveLength(13));
       expect(game.stock).toHaveLength(103 - count * 13);
       expect(
@@ -402,7 +402,7 @@ describe("10-card exposure", () => {
 });
 describe("local game flow", () => {
   it("rejects out-of-turn, stale commands and discard before draw without mutation", () => {
-    const g = createGame(),
+    const g = createGame(4, false, () => 0.999999),
       before = structuredClone(g);
     expect(run(g, { type: "draw", source: "stock" }, "p1").result.ok).toBe(
       false,
@@ -422,7 +422,7 @@ describe("local game flow", () => {
     expect(g).toEqual(before);
   });
   it("places discard before J+1, permits only next player pickup, preserves provenance", () => {
-    let g = run(createGame(), { type: "draw", source: "stock" }).state;
+    let g = run(createGame(4, false, () => 0.999999), { type: "draw", source: "stock" }).state;
     expect(run(g, { type: "draw", source: "stock" }).result.ok).toBe(false);
     const discarded = g.players[0].hand[0];
     g = run(g, { type: "discard", cardId: discarded.id }).state;
@@ -436,7 +436,7 @@ describe("local game flow", () => {
     expect(g.discards[0].pickedUp).toBe(true);
   });
   it("supports Soa discarding to the human player", () => {
-    let g = createGame(5);
+    let g = createGame(5, false, () => 0.999999);
     g.currentPlayerIndex = 1;
     g = run(g, { type: "draw", source: "stock" }).state;
     g = run(g, { type: "discard", cardId: g.players[1].hand[0].id }).state;
@@ -521,13 +521,13 @@ describe("local game flow", () => {
     ).toBe(13);
   });
   it("rejects invalid exposure without changing state", () => {
-    const g = createGame();
+    const g = createGame(4, false, () => 0.999999);
     const result = run(g, { type: "expose" });
     expect(result.result.ok).toBe(false);
     expect(result.state).toBe(g);
   });
   it("rejects legacy ten-card winning commands at runtime", () => {
-    const g = createGame();
+    const g = createGame(4, false, () => 0.999999);
     const result = run(g, {
       type: "declare",
       pattern: 10,
@@ -536,7 +536,7 @@ describe("local game flow", () => {
     expect(result.state).toBe(g);
   });
   it("failed declaration does not consume the selected discard", () => {
-    const g = run(createGame(), { type: "draw", source: "stock" }).state;
+    const g = run(createGame(4, false, () => 0.999999), { type: "draw", source: "stock" }).state;
     const result = run(g, {
       type: "declare",
       pattern: 13,
@@ -547,7 +547,7 @@ describe("local game flow", () => {
     expect(g.players[0].hand).toHaveLength(14);
   });
   it("ends a round when stock runs out without recycling history", () => {
-    const g = createGame();
+    const g = createGame(4, false, () => 0.999999);
     g.stock = g.stock.slice(0, 1);
     const drawn = run(g, { type: "draw", source: "stock" }).state;
     expect(
@@ -560,7 +560,7 @@ describe("local game flow", () => {
     ).toBe("finished");
   });
   it("redacts stock and other hands from public snapshots", () => {
-    const view = toGameView(createGame(), "p0");
+    const view = toGameView(createGame(4, false, () => 0.999999), "p0");
     expect(view).not.toHaveProperty("stock");
     expect(view.players[0].hand).toHaveLength(13);
     expect(view.players[1]).not.toHaveProperty("hand");

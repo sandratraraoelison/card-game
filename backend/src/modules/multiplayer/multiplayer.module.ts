@@ -8,7 +8,7 @@ import { SqliteRooms, SqliteSessions, SqliteStore } from './infrastructure/sqlit
 import { GamesController, RoomsController, SessionsController } from './transport/controllers';
 import { RequestLimitGuard, SessionGuard } from './transport/http';
 
-const identity: IdentitySource = { id: randomUUID, token: () => randomBytes(32).toString('hex'), hash: value => createHash('sha256').update(value).digest('hex') };
+const identity: IdentitySource = { id: randomUUID, roomCode: () => randomInt(100000, 1000000).toString(), token: () => randomBytes(32).toString('hex'), hash: value => createHash('sha256').update(value).digest('hex') };
 const clock: Clock = { now: Date.now };
 @Module({})
 export class MultiplayerModule {

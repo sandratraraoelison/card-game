@@ -3,7 +3,7 @@ import { createGame, NetworkError, toGameView, type CommandEnvelope, type LobbyS
 import { NestGameService } from '../src/features/game/infrastructure/nest-game-service';
 
 function fixture() {
-  const game = createGame();
+  const game = createGame(4, false, () => 0.999999);
   game.mode = 'remote';
   const snapshot = toGameView(game, 'p0');
   const room: RoomView = { id: 'room', revision: 1, name: 'Table', capacity: 4, playerCount: 4, status: 'playing', hostId: 'p0', members: [], game: { ...snapshot, revision: 1 } };

@@ -9,6 +9,7 @@ export function MeldPanel({
   disabled,
   onRemove,
   onExpose,
+  canExpose,
   onFinish,
 }: {
   melds: MeldView[];
@@ -17,6 +18,7 @@ export function MeldPanel({
   disabled: boolean;
   onRemove: (id: string) => void;
   onExpose: () => void;
+  canExpose: boolean;
   onFinish: () => void;
 }) {
   return (
@@ -95,11 +97,12 @@ export function MeldPanel({
         <div>
           <button
             className="button secondary"
-            disabled={disabled}
+            disabled={disabled || !canExpose}
             onClick={onExpose}
           >
             Afficher 10 cartes
           </button>
+          {!canExpose && <small>10 cartes naturelles en 4 + 3 + 3 requises.</small>}
           <button
             className="button primary"
             disabled={disabled}

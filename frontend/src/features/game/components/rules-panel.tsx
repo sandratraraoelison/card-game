@@ -22,6 +22,8 @@ export function RulesPanel() {
             4♦, dans les deux jeux.
           </p>
           <h3>03 — Votre tour</h3>
+          <p>Au partage, au moins 3 vrais jokers donnent une victoire immédiate et tous les prix actuels, reports inclus. Pendant la manche, réunir les 4 vrais jokers donne la même victoire. Les faux jokers ne comptent pas.</p>
+          <p>Au partage, au moins 4 paires de cartes identiques (même valeur et même enseigne, deux exemplaires distincts) annulent la distribution : les cartes sont redistribuées sans nouvelle mise. Une victoire par vrais jokers a priorité ; en cas de plusieurs gagnants au partage, le premier dans l’ordre des sièges gagne.</p>
           <p>
             Piochez, préparez vos combinaisons, puis défaussez une carte. Une
             défausse est placée devant le joueur suivant et reste consultable
@@ -43,8 +45,7 @@ export function RulesPanel() {
             autorisée à sa valeur et son enseigne d’origine : laissez «
             Substituer les vrais jokers » décoché. Aucun tri ou suite
             obligatoire supplémentaire n’est imposé à cette exposition. Elle ne
-            termine pas la manche : seule une main valide de 13 cartes permet de
-            gagner.
+            termine pas la manche. La victoire exige 13 cartes valides, sauf les victoires automatiques par vrais jokers.
           </p>
           <h3>06 — Hypothèses configurables</h3>
           <ul>
@@ -58,12 +59,13 @@ export function RulesPanel() {
               initiale.
             </li>
             <li>Seul J+1 peut reprendre la dernière défausse disponible.</li>
+            <li>Un vrai joker défaussé ne peut pas être repris : le joueur suivant doit piocher. Un faux joker reste reprenable à sa valeur d’origine.</li>
             <li>
               Les 10 cartes naturelles sont simplement exposées : la manche
               continue, sans défausse automatique ni passage du tour. Seules 13
               cartes permettent de gagner. Les cartes exposées restent dans
               votre main et peuvent être réorganisées ; retirer un de leurs
-              groupes annule l’exposition.
+              groupes annule l’exposition. Les victoires automatiques par vrais jokers constituent une exception à la règle des 13 cartes.
             </li>
             <li>
               On peut déclarer avant pioche, ou après pioche avec une défausse.

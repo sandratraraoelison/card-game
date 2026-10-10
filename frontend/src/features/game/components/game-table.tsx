@@ -94,7 +94,8 @@ export default function GameTable({
             discardCard={view.incoming?.card}
             discardFrom={view.incomingFrom}
             canDraw={canDraw}
-            canTakeDiscard={canDraw && !!view.top}
+            canTakeDiscard={canDraw && game.rules.allowDiscardPickup && !!view.top}
+            takeableDiscardId={view.top?.id}
             onDraw={actions.draw}
             status={view.status}
             received={view.received}
@@ -162,6 +163,7 @@ export default function GameTable({
             disabled={!canPlay}
             onRemove={actions.unmeld}
             onExpose={actions.expose}
+            canExpose={!!view.exposureMelds}
             onFinish={actions.finish}
           />
         </>
