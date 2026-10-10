@@ -1,0 +1,35 @@
+.piles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin: 16px auto 22px;
+  padding: 12px 0;
+}
+.slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .piles {
+    gap: 8px;
+    margin: 12px auto 16px;
+  }
+  .slot :global(.table-label) {
+    font-size: 7px;
+    letter-spacing: 0.6px;
+  }
+  .slot :global(.card-back),
+  .slot :global(.discard-pile),
+  .slot :global(.discard-pile > .playing-card) {
+    width: 58px;
+    height: 84px;
+  }
+  .slot :global(.deck-button) {
+    height: 84px;
+  }
+}

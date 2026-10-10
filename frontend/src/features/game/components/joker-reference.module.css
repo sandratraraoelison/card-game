@@ -1,0 +1,45 @@
+.reference {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 9px;
+}
+.reference > :global(.table-label) {
+  color: #ead9a7;
+}
+.reference .card {
+  transform: none;
+  padding: 7px;
+  border-color: #d3b771;
+  box-shadow: 0 0 24px #d3b7711c;
+}
+.reference strong {
+  font:
+    14px Georgia,
+    serif;
+  color: #f1e9cf;
+}
+.reference p {
+  font-size: 9px;
+  line-height: 1.8;
+  color: #c6d4c0;
+}
+@media (max-width: 640px) {
+  .reference {
+    gap: 8px;
+  }
+  .reference > :global(.table-label) {
+    font-size: 6px;
+    letter-spacing: 0.5px;
+  }
+  .reference .card :global(.playing-card) {
+    width: 58px;
+  }
+  .reference strong {
+    font-size: 11px;
+  }
+  .reference p {
+    font-size: 8px;
+  }
+}

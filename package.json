@@ -1,26 +1,25 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "rami-malagasy",
   "private": true,
+  "engines": { "node": "24.x" },
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.3.7",
-    "react": "19.2.8",
-    "react-dom": "19.2.8"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.3.7",
-    "tailwindcss": "^4",
-    "typescript": "^5"
+    "setup": "npm run setup:front && npm run setup:back",
+    "setup:front": "npm --prefix frontend ci",
+    "setup:back": "npm --prefix backend ci",
+    "dev": "npm run dev:front",
+    "dev:front": "npm --prefix frontend run dev",
+    "dev:back": "npm --prefix backend run dev",
+    "build": "npm run build:front && npm run build:back",
+    "build:front": "npm --prefix frontend run build",
+    "build:back": "npm --prefix backend run build",
+    "start": "npm run start:front",
+    "start:front": "npm --prefix frontend start",
+    "start:back": "npm --prefix backend start",
+    "lint": "npm --prefix frontend run lint && npm --prefix backend run typecheck",
+    "test": "npm run test:front && npm run test:back",
+    "test:front": "npm --prefix frontend test",
+    "test:back": "npm --prefix backend test",
+    "test:e2e": "npm --prefix frontend run test:e2e",
+    "test:online": "npm --prefix frontend run test:online"
   }
 }

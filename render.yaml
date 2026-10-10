@@ -1,0 +1,23 @@
+# Déployer via un Blueprint Render depuis la racine du dépôt.
+# Garder la racine du dépôt accessible pour compiler packages/game.
+# Plan gratuit : essais seulement, disque éphémère. Voir docs/deployment.md pour un volume durable.
+services:
+  - type: web
+    name: rami-api
+    runtime: node
+    plan: free
+    buildCommand: npm --prefix backend ci --include=dev && npm --prefix backend run build
+    startCommand: npm --prefix backend start
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - backend/**
+        - packages/game/**
+        - render.yaml
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 24.19.0
+      - key: CORS_ORIGINS
+        sync: false
