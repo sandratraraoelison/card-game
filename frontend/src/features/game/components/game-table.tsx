@@ -94,6 +94,7 @@ export default function GameTable({
             opponents={view.opponents}
             reference={game.reference}
             stockCount={game.stockCount}
+            miette={game.miette}
             discardCard={view.incoming?.card}
             discardFrom={view.incomingFrom}
             canDraw={canDraw}

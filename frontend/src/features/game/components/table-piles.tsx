@@ -6,6 +6,7 @@ import styles from "./table-piles.module.css";
 interface TablePilesProps {
   reference: Card;
   stockCount: number;
+  miette?: Card;
   discardCard?: Card;
   discardFrom?: string;
   canDraw: boolean;
@@ -15,6 +16,7 @@ interface TablePilesProps {
 export function TablePiles({
   reference,
   stockCount,
+  miette,
   discardCard,
   discardFrom,
   canDraw,
@@ -27,13 +29,17 @@ export function TablePiles({
         <button
           className="deck-button"
           aria-label="Piocher une carte"
-          disabled={!canDraw}
+          disabled={!canDraw || stockCount <= 1}
           onClick={() => onDraw("stock")}
         >
           <CardBack />
           <span className="stock-count">{stockCount}</span>
         </button>
         <span className="table-label">PIOCHE</span>
+        {miette && <div className="miette" aria-label="La miette, dernière carte non jouable">
+          <PlayingCard card={miette} small />
+          <span>La miette · non jouable</span>
+        </div>}
       </div>
       <JokerReference card={reference} />
       <div className={styles.slot}>

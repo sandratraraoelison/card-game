@@ -1,5 +1,24 @@
 import { expect, test, type Page } from "@playwright/test";
 
+test('desktop table and all fourteen cards fit on a laptop screen', async ({ page, isMobile }, testInfo) => {
+  test.skip(isMobile, 'Desktop layout');
+  for (const viewport of [{ width: 1366, height: 768 }, { width: 1920, height: 1080 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Essayer la main guidée' }).click();
+    await page.getByRole('button', { name: 'Piocher une carte', exact: true }).click();
+    await expect(page.locator('.hand-cards button')).toHaveCount(14);
+    const board = (await page.locator('.game-board').boundingBox())!;
+    const hand = (await page.locator('.hand-section').boundingBox())!;
+    expect(board.y).toBeGreaterThanOrEqual(0);
+    expect(board.y + board.height).toBeLessThanOrEqual(viewport.height);
+    expect(hand.y).toBeGreaterThanOrEqual(board.y + board.height);
+    expect(hand.y + hand.height).toBeLessThanOrEqual(viewport.height);
+    expect(await page.locator('.hand-cards').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await page.screenshot({ path: testInfo.outputPath(`desktop-${viewport.width}.png`), fullPage: true });
+  }
+});
+
 async function dragCard(
   page: Page,
   cardId: string,

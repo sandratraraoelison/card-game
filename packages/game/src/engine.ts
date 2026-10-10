@@ -144,6 +144,7 @@ export function toGameView(state: GameState, viewerId: string): GameView {
   return {
     ...publicState,
     stockCount: stock.length,
+    ...(stock.length > 0 && stock.length <= 10 ? { miette: stock[stock.length - 1] } : {}),
     players: players.map(({ hand, ...p }) => ({
       ...p,
       melds:
@@ -210,7 +211,10 @@ export function applyCommand(
       if (next.phase !== "draw")
         return fail("Vous avez déjà pioché. Défaussez une carte.");
       let card: Card | undefined;
-      if (command.source === "stock") card = next.stock.shift();
+      if (command.source === "stock") {
+        if (next.stock.length <= 1) return fail("La dernière carte est la miette : elle ne peut pas être piochée.");
+        card = next.stock.shift();
+      }
       else {
         if (!next.rules.allowDiscardPickup)
           return fail("La reprise de défausse est désactivée.");
@@ -246,11 +250,11 @@ export function applyCommand(
       );
       next.turn++;
       next.phase = "draw";
-      if (!next.stock.length) {
+      if (next.stock.length <= 1) {
         next.phase = "finished";
         next.result = {
           reason:
-            "Pioche épuisée : manche nulle, sans recyclage des défausses.",
+            "Il ne reste que la miette : manche nulle, sans recyclage des défausses.",
         };
       }
       break;

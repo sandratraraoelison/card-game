@@ -124,6 +124,9 @@ describe("deck and joker allocation", () => {
       const game = createGame(count, false, () => 0.999999);
       game.players.forEach((p) => expect(p.hand).toHaveLength(13));
       expect(game.stock).toHaveLength(103 - count * 13);
+      const playable = [...game.stock, ...game.players.flatMap(p => p.hand)];
+      expect(playable.filter(c => c.rank === game.reference.rank && c.suit === game.reference.suit)).toHaveLength(1);
+      expect(playable.some(c => c.id === game.reference.id)).toBe(false);
       expect(
         new Set(
           [
@@ -561,8 +564,11 @@ describe("local game flow", () => {
   });
   it("ends a round when stock runs out without recycling history", () => {
     const g = createGame(4, false, () => 0.999999);
-    g.stock = g.stock.slice(0, 1);
+    g.stock = g.stock.slice(0, 2);
+    const miette = g.stock[1];
     const drawn = run(g, { type: "draw", source: "stock" }).state;
+    expect(drawn.stock).toEqual([miette]);
+    expect(toGameView(drawn, 'p0').miette).toEqual(miette);
     expect(
       run(drawn, { type: "discard", cardId: drawn.players[0].hand[0].id }).state
         .result?.playerId,
@@ -571,6 +577,16 @@ describe("local game flow", () => {
       run(drawn, { type: "discard", cardId: drawn.players[0].hand[0].id }).state
         .phase,
     ).toBe("finished");
+  });
+  it('reveals only the miette at ten remaining cards and never allows drawing it', () => {
+    const g = createGame(4, true);
+    expect(toGameView(g, 'p0')).not.toHaveProperty('miette');
+    g.stock = g.stock.slice(0, 10);
+    expect(toGameView(g, 'p0').miette).toEqual(g.stock[9]);
+    g.stock = g.stock.slice(-1);
+    const result = run(g, { type: 'draw', source: 'stock' });
+    expect(result.result.ok).toBe(false);
+    expect(result.state).toBe(g);
   });
   it("redacts stock and other hands from public snapshots", () => {
     const view = toGameView(createGame(4, false, () => 0.999999), "p0");

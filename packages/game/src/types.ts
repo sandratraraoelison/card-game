@@ -74,7 +74,7 @@ export interface CommandEnvelope {
   command: GameCommand;
 }
 export type CommandResult = { ok: true } | { ok: false; error: string };
-// Public transport contract: never send opponents' hands or stock order to clients.
+// Public transport contract: hide opponents' hands and stock order, except the revealed miette.
 export interface PlayerView extends Omit<Player, "hand"> {
   hand?: Card[];
   cardCount: number;
@@ -82,6 +82,7 @@ export interface PlayerView extends Omit<Player, "hand"> {
 }
 export interface GameView extends Omit<GameState, "stock" | "players"> {
   stockCount: number;
+  miette?: Card;
   players: PlayerView[];
 }
 export interface GameService {

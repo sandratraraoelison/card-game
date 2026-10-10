@@ -12,6 +12,7 @@ interface GameBoardProps {
   opponents: OpponentView[];
   reference: Card;
   stockCount: number;
+  miette?: Card;
   discardCard?: Card;
   discardFrom?: string;
   canDraw: boolean;
@@ -55,6 +56,7 @@ export function GameBoard(props: GameBoardProps) {
       <TablePiles
         reference={props.reference}
         stockCount={props.stockCount}
+        miette={props.miette}
         discardCard={props.discardCard}
         discardFrom={props.discardFrom}
         canDraw={props.canDraw}
