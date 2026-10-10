@@ -42,6 +42,9 @@ for (const count of [4, 5]) {
       await expect(host.getByRole('button', { name: 'Démarrer la partie' })).toBeEnabled();
       await host.getByRole('button', { name: 'Démarrer la partie' }).click();
       for (const page of pages) {
+        const sidebar = await page.locator('.sidebar').boundingBox();
+        const toolbarLink = await page.getByRole('link', { name: '← Simulation locale' }).boundingBox();
+        if (!testInfo.project.use.isMobile) expect(toolbarLink!.x).toBeGreaterThanOrEqual(sidebar!.x + sidebar!.width);
         await expect(page.getByText('Solde fictif :', { exact: false })).toContainText('8');
         await expect(page.locator('.hand-cards .playing-card')).toHaveCount(13);
         await expect(page.locator('.opponent')).toHaveCount(count - 1);

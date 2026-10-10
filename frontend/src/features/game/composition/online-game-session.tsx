@@ -33,7 +33,7 @@ function OnlineScreen({ service }: { service: LobbyService }) {
   const { session, room, busy, connected } = lobby;
   const nextPrizes = roundPrizes(room?.capacity ?? 4, room?.stake ?? 0, room?.carryover ?? 0, room?.finishCarryover ?? 0);
   return <>
-    <div className={styles.toolbar}>
+    <div className={`${styles.toolbar} ${room?.game && room.game.phase !== 'finished' ? styles.toolbarInGame : ''}`}>
       <Link href="/">← Simulation locale</Link>
       <strong>Jeu en ligne</strong>
       {session && room?.game?.phase !== 'finished' && <span>Solde fictif : {formatAriary(room?.members.find(member => member.id === session.player.id)?.balance ?? lobby.balance ?? session.player.balance ?? 0)}</span>}
