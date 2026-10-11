@@ -1,4 +1,11 @@
-export function readEnvironment(env: NodeJS.ProcessEnv = process.env) {
+export interface EnvironmentConfig {
+  readonly port: number;
+  readonly corsOrigins: string[];
+  readonly databasePath: string;
+  readonly trustProxyHops: number;
+}
+
+export function readEnvironment(env: NodeJS.ProcessEnv = process.env): EnvironmentConfig {
   const port = Number(env.PORT ?? 3001);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
     throw new Error('PORT doit être un entier entre 1 et 65535.');

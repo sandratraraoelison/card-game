@@ -2,9 +2,7 @@ import { isValidStake, refundRoom, roundPrizes, toGameView, type PlayerAccount, 
 import { ApplicationError, type RoomRecord } from '../domain/models';
 import type { Clock, IdentitySource, RoomRepository } from './ports';
 
-export function requireMember(room: RoomRecord, playerId: string) {
-  if (!room.members.some(p => p.id === playerId)) throw new ApplicationError(403, 'Vous ne faites pas partie de ce salon.');
-}
+import { requireMember } from './room-access';
 export function summary(room: RoomRecord): RoomSummary {
   return { id: room.id, name: room.name, stake: room.stake ?? 0, pot: room.pot ?? 0, carryover: room.carryover ?? 0, finishCarryover: room.finishCarryover ?? 0, exposureWinnerId: room.exposureWinnerId, ...roundPrizes(room.capacity, room.stake ?? 0, room.game ? room.roundCarryover ?? 0 : room.carryover ?? 0, room.game ? room.roundFinishCarryover ?? 0 : room.finishCarryover ?? 0), capacity: room.capacity, playerCount: room.members.length, status: room.game ? 'playing' : 'waiting' };
 }

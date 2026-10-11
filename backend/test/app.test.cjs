@@ -24,4 +24,12 @@ test('deployment configuration accepts Render PORT and rejects invalid inputs',(
   assert.throws(()=>readEnvironment({PORT:'invalid'}));
   assert.throws(()=>readEnvironment({CORS_ORIGINS:'*'}));
   assert.throws(()=>readEnvironment({CORS_ORIGINS:'https://rami.example/path'}));
+  for (const PORT of ['0', '65536', '1.5']) assert.throws(() => readEnvironment({PORT}));
+  for (const TRUST_PROXY_HOPS of ['-1', '11', '1.5', 'invalid']) {
+    assert.throws(() => readEnvironment({TRUST_PROXY_HOPS}));
+  }
+  assert.throws(() => readEnvironment({DATABASE_PATH:'  '}));
+  assert.equal(readEnvironment({NODE_ENV:'test'}).databasePath, ':memory:');
+  assert.deepEqual(readEnvironment({CORS_ORIGINS:' https://rami.example , http://localhost:3000 '}).corsOrigins,
+    ['https://rami.example', 'http://localhost:3000']);
 });

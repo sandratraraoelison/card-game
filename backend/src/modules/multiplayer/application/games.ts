@@ -1,7 +1,7 @@
 import { applyCommand, createGame, includesValidExposure, settlePot, toGameView, type CommandEnvelope, type CommandResult } from '@rami/game';
 import { ApplicationError, type RoomRecord } from '../domain/models';
 import type { Clock, IdentitySource, RoomRepository } from './ports';
-import { requireMember } from './rooms';
+import { requireMember } from './room-access';
 
 export class Games {
   constructor(private readonly repository: RoomRepository, private readonly identity: IdentitySource, private readonly clock: Clock, private readonly random: () => number) {}

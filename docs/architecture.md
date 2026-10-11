@@ -15,11 +15,12 @@ backend/src/
   modules/health/                Santé HTTP
   modules/multiplayer/
     domain/                     Sessions, salons, erreurs
-    application/                Cas d’usage Sessions, Rooms, Games et ports
-    infrastructure/             SQLite et transactions
+    application/                Cas d’usage Sessions, Rooms, Games, accès au salon et ports
+    infrastructure/             SQLite, transactions et adaptateurs système
     transport/                  Controllers HTTP, validation, guards
     multiplayer.module.ts       Composition NestJS
-  config/                       PORT, CORS, base de données, proxies
+  config/environment.ts         Lecture et validation typée des variables d’environnement
+  config/http.ts                Configuration HTTP NestJS (CORS, proxies, en-têtes, parsing)
   app.module.ts                 Assemblage des modules
 
 frontend/src/
@@ -39,6 +40,8 @@ frontend/src/
 Les règles restent exclusivement dans `packages/game`. Aucun composant ne distribue les cartes ou ne change directement le moteur. Le backend et le frontend n’importent jamais leurs sources respectives.
 
 Les cas d’usage backend ne dépendent que du domaine et des ports `RoomRepository`, `SessionRepository`, `Clock` et `IdentitySource`. Le module NestJS injecte SQLite et les générateurs cryptographiques. La validation des payloads est une responsabilité du transport ; elle ne remplace pas les règles du moteur.
+
+Les cas d’usage `Games`, `Rooms` et `Sessions` ne s’importent pas entre eux. Le contrôle d’appartenance commun est isolé dans `application/room-access.ts`. Les adaptateurs d’identité, d’horloge et d’aléatoire cryptographique sont dans `infrastructure/system.ts` ; `multiplayer.module.ts` assemble les dépendances. `app.ts` orchestre la création de l’application, puis délègue la politique HTTP à `config/http.ts`. `readEnvironment` retourne un contrat explicite `EnvironmentConfig`, sans dépendance à NestJS. Les tests de frontières parcourent aussi les sous-dossiers des couches internes.
 
 Les hooks d’application frontend dépendent de `GameService` et `LobbyService`, jamais d’un adaptateur concret. Seules les compositions construisent les services. ESLint contrôle ces frontières. Un test backend interdit les dépendances vers NestJS, SQLite ou le transport dans les couches internes.
 
