@@ -19,7 +19,9 @@ src/modules/multiplayer/
   application/sessions.ts       Sessions invitées
   application/rooms.ts          Création, adhésion, départ, vues autorisées
   application/games.ts          Démarrage et commandes atomiques
+  application/room-access.ts    Contrôle d'appartenance partagé entre cas d'usage
   infrastructure/sqlite-store.ts  Dépôts SQLite et transactions
+  infrastructure/system.ts      Adaptateurs cryptographiques et horloge système
   transport/controllers.ts      Adaptateurs HTTP NestJS
   transport/validation.ts        Validation stricte des requêtes inconnues
   transport/http.ts             Guards, limitation de débit, filtre d’erreurs
@@ -27,6 +29,8 @@ src/modules/multiplayer/
 ```
 
 Le domaine et l’application n’importent ni NestJS ni SQLite. L’application ne connaît que les ports ; le module NestJS injecte les implémentations. Les controllers ne modifient jamais directement les cartes. Le transport peut évoluer vers SSE/WebSocket sans réécrire les cas d’usage.
+
+Les cas d'usage `Games`, `Rooms` et `Sessions` ne s'importent pas entre eux. `src/app.ts` crée l'application ; `src/config/environment.ts` valide les variables et retourne `EnvironmentConfig`, puis `src/config/http.ts` configure le transport HTTP. Le test d'architecture protège les frontières, y compris dans les sous-dossiers. Voir le [tableau de configuration](../README.md#configuration) pour les valeurs et contraintes.
 
 ## Contrat HTTP
 
@@ -38,11 +42,13 @@ Toutes les routes sauf la création de session et la santé exigent `Authorizati
 | POST | /sessions | { displayName } → { token, player } |
 | GET | /sessions/me | Joueur authentifié |
 | GET | /rooms | Résumés des salons ouverts |
-| POST | /rooms | { name, capacity: 4 ou 5 } |
+| POST | /rooms | { name, capacity: 4 ou 5, stake?: entier de 0 à 100000 } |
 | GET | /rooms/:id | Salon et vue privée éventuelle |
 | POST | /rooms/:id/join | Rejoindre ou retrouver sa place |
 | DELETE | /rooms/:id/members/me | Quitter hors manche active |
+| DELETE | /rooms/:id | Hôte seulement ; fermeture et remboursement atomiques, réponse 204 |
 | POST | /rooms/:id/game/start | Hôte seulement, effectif complet |
+| POST | /rooms/:id/game/ready | { gameId } ; confirmation après la manche, le dernier membre prêt déclenche la suivante |
 | POST | /rooms/:id/game/commands | CommandEnvelope → { result, room } |
 
 Exemple de commande :
